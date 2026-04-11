@@ -211,7 +211,17 @@ const Checkout = () => {
                                         <label className="block text-xs font-bold uppercase tracking-wide text-muted mb-3">{t('momo_phone_label')}</label>
                                         <div className="flex items-center justify-center space-x-3 text-2xl font-extrabold text-charcoal">
                                             <span className="text-muted opacity-50">+250</span>
-                                            <span>{user?.phone_number || user?.phone || "YOUR NUMBER"}</span>
+                                            <span>
+                                                {(() => {
+                                                    let num = user?.phone_number || user?.phone || "YOUR NUMBER";
+                                                    if (num !== "YOUR NUMBER") {
+                                                        num = num.replace(/\D/g, '');
+                                                        if (num.startsWith('250')) num = num.substring(3);
+                                                        if (num.startsWith('0')) num = num.substring(1);
+                                                    }
+                                                    return num;
+                                                })()}
+                                            </span>
                                         </div>
                                         <p className="text-[11px] text-muted mt-4 italic">*{t('momo_simulation_note')}</p>
                                     </div>

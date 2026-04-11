@@ -46,11 +46,20 @@ const processPayment = async (req, res) => {
         const user_id = req.user.id;
 
         // جلب رقم الهاتف الخاص بالمستخدم من قاعدة البيانات بدلاً من الاعتماد على المدخلات فقط
-        const userRes = await client.query('SELECT phone_number FROM users WHERE id = $1', [user_id]);
-        if (userRes.rows.length === 0 || !userRes.rows[0].phone_number) {
+        const userRes = await client.query('SELECT phone FROM users WHERE id = $1', [user_id]);
+        if (userRes.rows.length === 0 || !userRes.rows[0].phone) {
             return res.status(400).json({ error: 'User phone number not found. Please update your profile.' });
         }
-        const phone_number = userRes.rows[0].phone_number;
+        let phone_number = userRes.rows[0].phone;
+        
+        // تنظيف الرقم ليتوافق مع متطلبات MTN API (إزالة + وأي مسافات)
+        phone_number = phone_number.replace(/\D/g, '');
+        // إذا كان لا يبدأ بمفتاح رواندا، نضيفه
+        if (phone_number.startsWith('0')) {
+            phone_number = '250' + phone_number.substring(1);
+        } else if (!phone_number.startsWith('250') && phone_number.length === 9) {
+            phone_number = '250' + phone_number;
+        }
 
         // جلب تفاصيل الطلب من قاعدة البيانات
         const orderRes = await client.query(
