@@ -17,9 +17,9 @@ const register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
 
-        // تم التعديل هنا: استخدام phone_number بدلاً من phone
+        // تم التعديل هنا: العودة لاستخدام phone لتطابق قاعدة البيانات (مع تمريره للفرونت إند)
         const newUser = await pool.query(
-            'INSERT INTO users (name, email, password_hash, phone_number, address) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role',
+            'INSERT INTO users (name, email, password_hash, phone, address) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, phone as phone_number',
             [name, email, password_hash, phone, address]
         );
 
@@ -62,7 +62,7 @@ const login = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                phone_number: user.phone_number // إضافة الحقل هنا لضمان تمريره للفرونت إند
+                phone_number: user.phone || user.phone_number // دعم الحالتين
             }
         });
 
@@ -77,9 +77,8 @@ const updateProfile = async (req, res) => {
         const { id } = req.user;
         const { name, phone, address } = req.body;
 
-        // تم التعديل هنا: استخدام phone_number = $2 بدلاً من phone = $2
         const updatedUser = await pool.query(
-            'UPDATE users SET name = $1, phone_number = $2, address = $3 WHERE id = $4 RETURNING id, name, email, phone_number, address, role',
+            'UPDATE users SET name = $1, phone = $2, address = $3 WHERE id = $4 RETURNING id, name, email, phone as phone_number, address, role',
             [name, phone, address, id]
         );
 
@@ -96,9 +95,9 @@ const updateProfile = async (req, res) => {
 
 const getMe = async (req, res) => {
     try {
-        // تم التعديل هنا: جلب phone_number بدلاً من phone
+        // تم التعديل هنا: جلب phone as phone_number
         const userObj = await pool.query(
-            'SELECT id, name, email, phone_number, address, role, created_at FROM users WHERE id = $1',
+            'SELECT id, name, email, phone as phone_number, address, role, created_at FROM users WHERE id = $1',
             [req.user.id]
         );
         
