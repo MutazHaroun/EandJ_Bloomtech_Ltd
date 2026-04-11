@@ -9,9 +9,8 @@ const Footer = () => {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
-  // 📍 تنبيه هام: يجب أن يحتوي الرابط على كلمة "/embed" ليعمل داخل الموقع
-  // استبدل هذا الرابط بالرابط الذي تنسخه من Google Maps -> Share -> Embed a map
-  const mapEmbedUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15949.953770381335!2d30.051939!3d-1.944073!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x19dca4258ed8e797%3A0xf529ef651613b7!2sKigali%2C%20Rwanda!5e0!3m2!1sen!2s!4v1712470000000!5m2!1sen!2s";
+  // رابط مضمن يشير بالضبط إلى إحداثيات المشاتل
+  const mapEmbedUrl = "https://maps.google.com/maps?q=-1.9688403,30.1144477&t=&z=15&ie=UTF8&iwloc=&output=embed";
 
   const Icons = {
     Leaf: () => (
@@ -120,10 +119,9 @@ const Footer = () => {
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               ></iframe>
+              <div className="absolute inset-0 z-10 bg-emerald-950/20 group-hover:bg-transparent transition-colors duration-300 block w-full h-full" />
               
-              <div className="absolute inset-0 bg-emerald-950/20 group-hover:bg-transparent transition-colors duration-300" />
-              
-              <div className="absolute top-4 right-4 bg-emerald-600 group-hover:bg-emerald-500 px-4 py-2 rounded-full shadow-lg transition-transform transform group-hover:scale-105 flex items-center gap-2">
+              <div className="absolute z-20 top-4 right-4 bg-emerald-600 group-hover:bg-emerald-500 px-4 py-2 rounded-full shadow-lg transition-transform transform group-hover:scale-105 flex items-center gap-2">
                  <Icons.MapPin />
                  <span className="text-[10px] font-black text-white uppercase tracking-widest mt-0.5">Open in Maps</span>
               </div>
