@@ -14,6 +14,7 @@ const ManageProducts = () => {
     // State للنموذج والملف
     const [form, setForm] = useState({ name: '', description: '', category: 'flowers', price: '', stock_quantity: '' });
     const [imageFile, setImageFile] = useState(null);
+    const [saving, setSaving] = useState(false);
 
     const API_URL = "https://eandj-bloomtech-ltd.onrender.com"; // تأكد من مطابقة بورت السيرفر لديك
 
@@ -52,6 +53,7 @@ const ManageProducts = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setSaving(true);
         
         // استخدام FormData لدعم رفع الملفات
         const formData = new FormData();
@@ -77,7 +79,10 @@ const ManageProducts = () => {
             setFormVisible(false);
             fetchProducts();
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Action failed');
+            console.error('Submit Error:', err);
+            toast.error(err.response?.data?.error || 'Action failed. Please check Render Environment Variables or internet connection.');
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -228,13 +233,13 @@ const ManageProducts = () => {
                                 </div>
 
                                 <div className="flex gap-3 pt-4">
-                                    <button type="button" onClick={() => setFormVisible(false)}
-                                        className="flex-1 py-3 border-2 border-stone-200 text-slate rounded-xl font-bold hover:bg-stone-50 transition">
+                                    <button type="button" onClick={() => setFormVisible(false)} disabled={saving}
+                                        className="flex-1 py-3 border-2 border-stone-200 text-slate rounded-xl font-bold hover:bg-stone-50 transition disabled:opacity-50">
                                         Cancel
                                     </button>
-                                    <button type="submit"
-                                        className="flex-1 py-3 bg-forest hover:bg-forest-dark text-white rounded-xl font-bold shadow-md transition active:scale-[0.98]">
-                                        {editingId ? 'Update' : 'Create'} Product
+                                    <button type="submit" disabled={saving}
+                                        className="flex-1 py-3 bg-forest hover:bg-forest-dark text-white rounded-xl font-bold shadow-md transition active:scale-[0.98] disabled:opacity-50">
+                                        {saving ? 'Saving...' : (editingId ? 'Update' : 'Create')}
                                     </button>
                                 </div>
                             </form>
