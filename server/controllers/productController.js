@@ -5,17 +5,11 @@ const createProduct = async (req, res) => {
     try {
         const { name, description, category, price, stock_quantity } = req.body;
         
-        // إذا قام Multer برفع ملف، نستخدم مساره، وإلا نبحث عن رابط في body
-        let image_url = req.file ? `/uploads/${req.file.filename}` : req.body.image_url || '';
-
-        // تحويل المسار إلى رابط كامل
-        const fullImageUrl = image_url.startsWith('http')
-            ? image_url
-            : `http://localhost:5001/${image_url.replace(/^\/+/, '')}`;
+        let image_url = req.file ? req.file.path : req.body.image_url || '';
 
         const result = await pool.query(
             'INSERT INTO products (name, description, category, price, stock_quantity, image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [name, description, category, price, stock_quantity, fullImageUrl]
+            [name, description, category, price, stock_quantity, image_url]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -36,21 +30,15 @@ const updateProduct = async (req, res) => {
 
         let image_url = currentProduct.rows[0].image_url; // القيمة الافتراضية هي الصورة القديمة
 
-        // إذا تم رفع ملف جديد، نقوم بتحديث المسار
         if (req.file) {
-            image_url = `/uploads/${req.file.filename}`;
+            image_url = req.file.path; // Cloudinary URL
         } else if (req.body.image_url) {
             image_url = req.body.image_url;
         }
 
-        // تحويل المسار إلى رابط كامل
-        const fullImageUrl = image_url.startsWith('http')
-            ? image_url
-            : `http://localhost:5001/${image_url.replace(/^\/+/, '')}`;
-
         const result = await pool.query(
             'UPDATE products SET name = $1, description = $2, category = $3, price = $4, stock_quantity = $5, image_url = $6 WHERE id = $7 RETURNING *',
-            [name, description, category, price, stock_quantity, fullImageUrl, id]
+            [name, description, category, price, stock_quantity, image_url, id]
         );
         
         res.json(result.rows[0]);
@@ -85,12 +73,7 @@ const getAllProducts = async (req, res) => {
 
         const productsRes = await pool.query(queryStr, values);
         
-        const products = productsRes.rows.map(p => ({
-            ...p,
-            image_url: p.image_url.startsWith('http')
-                ? p.image_url
-                : `http://localhost:5001/${p.image_url.replace(/^\/+/, '')}`
-        }));
+        const products = productsRes.rows;
 
         // عدد المنتجات الكلي
         let countQuery = 'SELECT COUNT(*) FROM products WHERE 1=1';
@@ -131,10 +114,6 @@ const getProductById = async (req, res) => {
         if (productRes.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
 
         const product = productRes.rows[0];
-        product.image_url = product.image_url.startsWith('http')
-            ? product.image_url
-            : `http://localhost:5001/${product.image_url.replace(/^\/+/, '')}`;
-
         res.json(product);
     } catch (err) {
         console.error(err);

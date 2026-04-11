@@ -11,32 +11,13 @@ const {
 } = require('../controllers/productController');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
-// 1. إعداد التخزين (Storage Configuration)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/'); // تأكد من إنشاء مجلد باسم uploads في جذر مجلد server
-    },
-    filename: (req, file, cb) => {
-        // تسمية الملف: الوقت الحالي + الامتداد الأصلي (مثال: 1711884123456.jpg)
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
-
-// 2. إعداد الفلتر (تأكد أن الملف المرفوع هو صورة فقط)
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only images are allowed!'), false);
-    }
-};
+const { storage } = require('../config/cloudinary');
 
 const upload = multer({ 
     storage: storage,
-    fileFilter: fileFilter,
     limits: { 
-        fileSize: 100 * 1024 * 1024, // تم رفع الحد إلى 15 ميجابايت ليتناسب مع صور الهاتف عالية الجودة
-        files: 1 // ضمان رفع ملف واحد فقط في المرة الواحدة
+        fileSize: 10 * 1024 * 1024, // 10 MB limit for safety
+        files: 1
     } 
 });
 
