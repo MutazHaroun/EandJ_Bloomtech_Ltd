@@ -15,7 +15,7 @@ const ManageProducts = () => {
     const [form, setForm] = useState({ name: '', description: '', category: 'flowers', price: '', stock_quantity: '' });
     const [imageFile, setImageFile] = useState(null);
 
-    const API_URL = "http://localhost:5001"; // تأكد من مطابقة بورت السيرفر لديك
+    const API_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001"; // تأكد من مطابقة بورت السيرفر لديك
 
     const fetchProducts = async () => {
         try {
