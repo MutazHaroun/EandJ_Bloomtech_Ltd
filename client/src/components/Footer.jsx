@@ -103,21 +103,31 @@ const Footer = () => {
             <h4 className="text-[11px] font-black uppercase tracking-[0.4em] text-emerald-500 mb-6">
                {t('find_us_title', 'Visit Our Nursery')}
             </h4>
-            <div className="w-full h-52 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative group bg-emerald-900/20">
+            <a 
+              href="https://maps.app.goo.gl/MLjB6qLHYGgTZ9hY9?g_st=ic" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="block w-full h-52 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative group bg-emerald-900/20 cursor-pointer"
+            >
+              {/* Disable pointer events on iframe so the anchor receives the click */}
               <iframe
                 title="E&J Bloomtech Nursery Location"
                 src={mapEmbedUrl}
                 width="100%"
                 height="100%"
-                style={{ border: 0 }}
+                style={{ border: 0, pointerEvents: 'none' }}
                 allowFullScreen=""
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               ></iframe>
-              <div className="absolute top-4 right-4 bg-emerald-600 px-3 py-1 rounded-full shadow-lg pointer-events-none">
-                 <span className="text-[9px] font-black text-white uppercase tracking-widest">Live Map</span>
+              
+              <div className="absolute inset-0 bg-emerald-950/20 group-hover:bg-transparent transition-colors duration-300" />
+              
+              <div className="absolute top-4 right-4 bg-emerald-600 group-hover:bg-emerald-500 px-4 py-2 rounded-full shadow-lg transition-transform transform group-hover:scale-105 flex items-center gap-2">
+                 <Icons.MapPin />
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest mt-0.5">Open in Maps</span>
               </div>
-            </div>
+            </a>
           </div>
         </div>
 
