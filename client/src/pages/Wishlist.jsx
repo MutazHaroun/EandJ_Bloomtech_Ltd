@@ -10,6 +10,7 @@ const Wishlist = () => {
     const { t } = useTranslation();
     const [wishlist, setWishlist] = useState([]);
     const [loading, setLoading] = useState(true);
+    console.log("Wishlist V2 loaded - Bypassing cache...");
     
     const BASE_URL = 'https://eandj-bloomtech-ltd.onrender.com';
 
