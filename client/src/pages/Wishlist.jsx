@@ -32,7 +32,7 @@ const Wishlist = () => {
     const removeFromWishlist = async (productId) => {
         try {
             await API.delete(`/wishlist/${productId}`);
-            setWishlist(prev => prev.filter(item => item.product_id !== productId));
+            setWishlist(prev => prev.filter(item => item.id !== productId));
             toast.success(t('wishlist_remove_success') || 'Removed from wishlist');
         } catch (err) {
             console.error(err);
@@ -85,13 +85,9 @@ const Wishlist = () => {
                     className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 shrink-0"
                 >
                     <AnimatePresence>
-                        {wishlist.map(item => {
-                            const fileName = (item.image_url || item.image || "").replace(/^.*[\\\/]/, '');
-                            const imageSrc = `${BASE_URL}/uploads/${fileName}`;
-
-                            return (
+                        {wishlist.map(item => (
                                 <motion.div 
-                                    key={item.product_id}
+                                    key={item.id}
                                     layout
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
@@ -99,22 +95,22 @@ const Wishlist = () => {
                                     className="bg-white border border-stone-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group relative flex flex-col"
                                 >
                                     <button 
-                                        onClick={() => removeFromWishlist(item.product_id)}
+                                        onClick={() => removeFromWishlist(item.id)}
                                         className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-stone-400 hover:text-terra hover:bg-white transition-all shadow-sm"
                                         title="Remove from Wishlist"
                                     >
                                         <Trash2 size={16} />
                                     </button>
 
-                                    <Link to={`/product/${item.product_id}`} className="block flex-1 flex flex-col h-full">
+                                    <Link to={`/product/${item.id}`} className="block flex-1 flex flex-col h-full">
                                         <div className="h-48 relative bg-stone-100 overflow-hidden w-full">
                                             <img 
-                                                src={imageSrc} 
+                                                src={item.image_url || `https://picsum.photos/seed/${item.id}/300/300`} 
                                                 alt={item.name} 
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                 onError={(e) => {
                                                     e.target.onerror = null;
-                                                    e.target.src = `https://picsum.photos/seed/${item.product_id}/300/300`;
+                                                    e.target.src = `https://picsum.photos/seed/${item.id}/300/300`;
                                                 }}
                                             />
                                         </div>
