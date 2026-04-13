@@ -121,8 +121,8 @@ const Wishlist = () => {
                                         </div>
                                     </Link>
                                 </motion.div>
-                            );
-                        })}
+                            ))
+                        }
                     </AnimatePresence>
                 </motion.div>
             )}
