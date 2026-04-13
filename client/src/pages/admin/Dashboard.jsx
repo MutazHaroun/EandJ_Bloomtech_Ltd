@@ -13,7 +13,7 @@ const item = {
 };
 
 const Dashboard = () => {
-    const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, paidOrders: 0 });
+    const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, paidOrders: 0, weeklyData: [] });
     const [recentOrders, setRecentOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -30,11 +30,33 @@ const Dashboard = () => {
                 const paidOrds = ords.filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered');
                 const totalRev = paidOrds.reduce((sum, curr) => sum + parseFloat(curr.total_amount), 0);
 
+                const now = new Date();
+                const last4Weeks = [0, 0, 0, 0];
+                
+                paidOrds.forEach(order => {
+                    const orderDate = new Date(order.created_at);
+                    const diffTime = Math.abs(now - orderDate);
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 7) last4Weeks[3] += parseFloat(order.total_amount);
+                    else if (diffDays <= 14) last4Weeks[2] += parseFloat(order.total_amount);
+                    else if (diffDays <= 21) last4Weeks[1] += parseFloat(order.total_amount);
+                    else if (diffDays <= 28) last4Weeks[0] += parseFloat(order.total_amount);
+                });
+
+                const maxWeekly = Math.max(...last4Weeks, 1);
+                const weeklyData = last4Weeks.map((val, i) => ({
+                    value: val,
+                    height: (val / maxWeekly) * 100,
+                    label: i === 3 ? "This Wk" : `${3 - i} Wks Ago`
+                }));
+
                 setStats({
                     products: prods.length,
                     orders: ords.length,
                     revenue: totalRev,
                     paidOrders: paidOrds.length,
+                    weeklyData,
                 });
                 setRecentOrders(ords.slice(0, 5));
             } catch (err) {
@@ -142,6 +164,44 @@ const Dashboard = () => {
                         <p className="text-xs text-muted font-medium mt-1">{card.title}</p>
                     </motion.div>
                 ))}
+            </motion.div>
+
+            {/* ═══ WEEKLY SALES REPORT CHART ═══ */}
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white rounded-2xl p-8 border border-stone-100 shadow-sm mb-10 overflow-hidden relative"
+            >
+                <div className="mb-6">
+                    <h3 className="font-extrabold text-charcoal text-lg">Sales Report (Past 4 Weeks)</h3>
+                    <p className="text-xs text-muted mt-1">Growth tracking based on successful purchases</p>
+                </div>
+
+                <div className="flex items-end justify-between sm:justify-around h-48 mt-4 gap-4 sm:gap-12 relative z-10">
+                    {stats.weeklyData.map((week, idx) => (
+                        <div key={idx} className="flex flex-col items-center flex-1 max-w-[80px]">
+                            <div className="w-full flex justify-center h-40 items-end relative group">
+                                <motion.div 
+                                    initial={{ height: 0 }}
+                                    animate={{ height: `${week.height}%` }}
+                                    transition={{ duration: 0.8, type: 'spring', bounce: 0.2, delay: idx * 0.1 }}
+                                    className={`w-full max-w-[50px] rounded-t-lg transition-colors relative cursor-pointer
+                                        ${idx === 3 ? 'bg-forest group-hover:bg-forest-light' : 'bg-sage/40 group-hover:bg-sage/70'}
+                                    `}
+                                />
+                                {/* Tooltip */}
+                                <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform bg-charcoal text-white text-xs font-bold py-1 px-3 rounded-lg shadow-lg whitespace-nowrap z-20 origin-bottom">
+                                    {week.value.toLocaleString()} RWF
+                                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-charcoal" />
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-bold text-muted uppercase tracking-wider mt-3 text-center">
+                                {week.label}
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </motion.div>
 
             {/* ═══ RECENT ORDERS TABLE ═══ */}

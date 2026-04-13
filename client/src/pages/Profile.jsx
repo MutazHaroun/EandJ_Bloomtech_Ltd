@@ -4,7 +4,7 @@ import API from '../api';
 import { 
     User, Phone, MapPin, Package, Clock, CheckCircle, 
     Truck, XCircle, CreditCard, Edit2, Save, X, 
-    ShoppingBag, Heart 
+    ShoppingBag, Heart, ReceiptText, Download 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next'; // إضافة الاستيراد
@@ -19,6 +19,7 @@ const Profile = () => {
     const [wishlist, setWishlist] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null); // للتحكم في نافذة الإيصال
     
     const BASE_URL = 'https://eandj-bloomtech-ltd.onrender.com'; 
     
@@ -241,7 +242,15 @@ const Profile = () => {
                                             </div>
                                         </div>
                                         <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                            <p className="text-xs font-bold text-slate uppercase">ID: <span className="text-charcoal ml-1">{order.id.slice(-8).toUpperCase()}</span></p>
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-xs font-bold text-slate uppercase">ID: <span className="text-charcoal ml-1">{order.id.slice(-8).toUpperCase()}</span></p>
+                                                <button 
+                                                    onClick={() => setSelectedOrder(order)}
+                                                    className="text-white bg-charcoal hover:bg-black px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                                                >
+                                                    <ReceiptText size={14} /> Receipt
+                                                </button>
+                                            </div>
                                             <Link to={`/track?code=${order.tracking_number}`} className="text-forest text-sm font-bold hover:underline">{t('track_package_link')} &rarr;</Link>
                                         </div>
                                     </div>
@@ -251,6 +260,107 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ═══ RECEIPT MODAL ═══ */}
+            <AnimatePresence>
+                {selectedOrder && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-charcoal/60 backdrop-blur-sm"
+                            onClick={() => setSelectedOrder(null)}
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl w-full max-w-md relative z-10 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        >
+                            {/* Receipt Header */}
+                            <div className="bg-stone-50 p-6 text-center border-b border-stone-200 border-dashed relative">
+                                <button 
+                                    onClick={() => setSelectedOrder(null)}
+                                    className="absolute top-4 right-4 text-stone-400 hover:text-charcoal transition-colors bg-white p-1 rounded-full shadow-sm"
+                                >
+                                    <X size={18} />
+                                </button>
+                                <div className="w-12 h-12 bg-forest mx-auto rounded-full flex items-center justify-center mb-3 shadow-md">
+                                    <ReceiptText className="text-white" size={24} />
+                                </div>
+                                <h3 className="font-extrabold text-charcoal text-xl tracking-tight uppercase">E&J Bloomtech</h3>
+                                <p className="text-xs text-muted font-mono mt-1">Order #{selectedOrder.id.slice(0, 8).toUpperCase()}</p>
+                            </div>
+
+                            {/* Receipt Body */}
+                            <div className="p-6 overflow-y-auto custom-scrollbar">
+                                <div className="space-y-3 mb-6 border-b border-stone-100 pb-6">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted font-medium">Date</span>
+                                        <span className="font-bold text-charcoal">{new Date(selectedOrder.created_at).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted font-medium">Customer</span>
+                                        <span className="font-bold text-charcoal">{profile.name}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted font-medium">Status</span>
+                                        <span className={`font-bold px-2 py-0.5 rounded text-[10px] uppercase ${getStatusColor(selectedOrder.status)}`}>
+                                            {selectedOrder.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-muted font-medium">Tracking</span>
+                                        <span className="font-mono font-bold text-forest text-xs">{selectedOrder.tracking_number}</span>
+                                    </div>
+                                </div>
+
+                                <h4 className="text-xs font-bold text-slate uppercase tracking-wider mb-4 border-b border-stone-200 pb-2">Purchased Items</h4>
+                                <div className="space-y-4 mb-6">
+                                    {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                                        selectedOrder.items.map((item, idx) => (
+                                            <div key={idx} className="flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-stone-400 font-bold text-xs">{item.quantity}x</span>
+                                                    <span className="font-semibold text-sm text-charcoal max-w-[160px] truncate">{item.name}</span>
+                                                </div>
+                                                <span className="font-mono text-sm font-medium text-charcoal">
+                                                    {(item.quantity * parseFloat(item.price_at_purchase)).toLocaleString()} 
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted text-xs italic">No item details available.</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100">
+                                    <div className="flex justify-between items-center text-sm mb-2">
+                                        <span className="text-muted font-medium">Subtotal</span>
+                                        <span className="font-mono font-bold text-charcoal text-sm">{Number(selectedOrder.total_amount).toLocaleString()} RWF</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm mb-3">
+                                        <span className="text-muted font-medium">Delivery</span>
+                                        <span className="font-mono font-bold text-forest text-sm">FREE</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-t border-stone-200 border-dashed pt-3 mt-1">
+                                        <span className="font-extrabold text-charcoal text-base uppercase">Total</span>
+                                        <span className="font-mono font-extrabold text-charcoal text-xl">{Number(selectedOrder.total_amount).toLocaleString()} RWF</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Receipt Footer */}
+                            <div className="p-4 bg-charcoal text-center flex justify-center">
+                                 <button onClick={() => window.print()} className="flex items-center justify-center gap-2 text-white hover:text-stone-200 text-sm font-bold transition-colors">
+                                     <Download size={16} /> Print / Save as PDF
+                                 </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
