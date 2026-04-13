@@ -21,6 +21,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import TrackOrder from './pages/TrackOrder';
 import Profile from './pages/Profile';
+import Wishlist from './pages/Wishlist';
 import Dashboard from './pages/admin/Dashboard';
 import ManageProducts from './pages/admin/ManageProducts';
 import ManageOrders from './pages/admin/ManageOrders';
@@ -70,6 +71,7 @@ const AnimatedRoutes = ({ onCartOpen }) => {
                 <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
                 <Route path="/checkout" element={<PrivateRoute><PageTransition><Checkout /></PageTransition></PrivateRoute>} />
                 <Route path="/profile" element={<PrivateRoute><PageTransition><Profile /></PageTransition></PrivateRoute>} />
+                <Route path="/wishlist" element={<PrivateRoute><PageTransition><Wishlist /></PageTransition></PrivateRoute>} />
               </Routes>
             </main>
 

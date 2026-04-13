@@ -7,7 +7,7 @@ import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-
 import { 
     ShoppingBag, User, LogOut, Menu, X, 
     Search, Leaf, ChevronDown, Settings, 
-    Globe // أيقونة الكرة الأرضية للغات
+    Globe, Heart 
 } from 'lucide-react';
 
 const Navbar = ({ onCartOpen }) => {
@@ -166,6 +166,10 @@ const Navbar = ({ onCartOpen }) => {
                             <button onClick={() => setIsSearchOpen(true)} className="p-2.5 rounded-2xl text-slate hover:bg-forest/5 transition-all">
                                 <Search size={20} />
                             </button>
+
+                            <Link to="/wishlist" className="p-2.5 rounded-2xl text-slate hover:bg-forest/5 transition-all">
+                                <Heart size={20} />
+                            </Link>
 
                             <button onClick={onCartOpen} className="relative p-2.5 rounded-2xl text-slate hover:bg-forest/5 transition-all">
                                 <ShoppingBag size={20} />
