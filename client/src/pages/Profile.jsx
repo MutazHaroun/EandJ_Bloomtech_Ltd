@@ -183,15 +183,15 @@ const Profile = () => {
                         ) : (
                             <div className="grid grid-cols-2 gap-4">
                                 {wishlist.slice(0, 4).map(item => (
-                                        <Link key={item.wishlist_id} to={`/product/${item.id}`} className="relative group rounded-2xl overflow-hidden border border-stone-100 shadow-sm transition-transform hover:scale-[1.02] bg-stone-100">
+                                        <Link key={item.wishlist_id || item.id} to={`/product/${item.product_id || item.id}`} className="relative group rounded-2xl overflow-hidden border border-stone-100 shadow-sm transition-transform hover:scale-[1.02] bg-stone-100">
                                             <div className="w-full h-28 overflow-hidden bg-stone-200">
                                                 <img 
-                                                    src={item.image_url || `https://picsum.photos/seed/${item.id}/200/200`} 
+                                                    src={item.image_url || `https://picsum.photos/seed/${item.product_id || item.id}/200/200`} 
                                                     alt={item.name} 
                                                     className="w-full h-full object-cover"
                                                     onError={(e) => {
                                                         e.target.onerror = null;
-                                                        e.target.src = `https://picsum.photos/seed/${item.id}/200/200`;
+                                                        e.target.src = `https://picsum.photos/seed/${item.product_id || item.id}/200/200`;
                                                     }}
                                                 />
                                             </div>

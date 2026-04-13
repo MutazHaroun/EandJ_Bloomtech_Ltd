@@ -25,7 +25,7 @@ const getWishlist = async (req, res) => {
     try {
         const { id: user_id } = req.user;
         const result = await pool.query(
-            'SELECT w.id as wishlist_id, p.* FROM wishlists w JOIN products p ON w.product_id = p.id WHERE w.user_id = $1 ORDER BY w.created_at DESC',
+            'SELECT w.id as wishlist_id, w.product_id, p.* FROM wishlists w JOIN products p ON w.product_id = p.id WHERE w.user_id = $1 ORDER BY w.created_at DESC',
             [user_id]
         );
         res.json(result.rows);
