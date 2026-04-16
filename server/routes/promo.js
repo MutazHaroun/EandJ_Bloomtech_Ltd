@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { createPromo, validatePromo, getAllPromos, togglePromoStatus, deletePromo } = require('../controllers/promoController');
-const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
+const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 router.post('/validate', validatePromo);
 
 // Admin only routes
-router.post('/', verifyToken, isAdmin, createPromo);
-router.get('/', verifyToken, isAdmin, getAllPromos);
-router.put('/:id/toggle', verifyToken, isAdmin, togglePromoStatus);
-router.delete('/:id', verifyToken, isAdmin, deletePromo);
+router.post('/', authenticateToken, isAdmin, createPromo);
+router.get('/', authenticateToken, isAdmin, getAllPromos);
+router.put('/:id/toggle', authenticateToken, isAdmin, togglePromoStatus);
+router.delete('/:id', authenticateToken, isAdmin, deletePromo);
 
 module.exports = router;
