@@ -10,7 +10,7 @@ import { ChevronLeft, ShoppingBag, CreditCard, CheckCircle, Phone, Loader2, Leaf
 
 const Checkout = () => {
     const { t } = useTranslation(); // تفعيل الترجمة
-    const { cart, cartTotal, clearCart } = useContext(CartContext);
+    const { cart, cartSubtotal, cartTotal, discount, clearCart } = useContext(CartContext);
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
@@ -139,8 +139,14 @@ const Checkout = () => {
                             <div className="bg-cream rounded-2xl p-6">
                                 <div className="flex justify-between text-sm mb-2">
                                     <span className="text-muted">{t('subtotal_label')}</span>
-                                    <span className="font-semibold text-charcoal">{cartTotal.toLocaleString()} RWF</span>
+                                    <span className="font-semibold text-charcoal">{cartSubtotal.toLocaleString()} RWF</span>
                                 </div>
+                                {discount > 0 && (
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span className="text-muted">Discount</span>
+                                        <span className="font-semibold text-terra">-{ (cartSubtotal * discount).toLocaleString() } RWF</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm mb-4">
                                     <span className="text-muted">{t('delivery_label')}</span>
                                     <span className="font-semibold text-forest">{t('free_label')}</span>

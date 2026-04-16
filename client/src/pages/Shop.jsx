@@ -40,6 +40,7 @@ const Shop = () => {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [quickViewProduct, setQuickViewProduct] = useState(null);
     
     // --- Filter States ---
     const [search, setSearch] = useState('');
@@ -388,6 +389,7 @@ const Shop = () => {
                                             product={product} 
                                             mode={viewMode} 
                                             onAdd={handleAddToCart} 
+                                            onQuickView={() => setQuickViewProduct(product)}
                                             t={t}
                                         />
                                     ))}
@@ -464,13 +466,95 @@ const Shop = () => {
                     </>
                 )}
             </AnimatePresence>
+
+            {/* 4. Quick View Modal */}
+            <AnimatePresence>
+                {quickViewProduct && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-110 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setQuickViewProduct(null)}
+                    >
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-[32px] overflow-hidden shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col md:flex-row relative"
+                        >
+                            <button 
+                                onClick={() => setQuickViewProduct(null)}
+                                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/80 backdrop-blur text-charcoal rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors shadow-sm"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <div className="w-full md:w-1/2 aspect-square md:aspect-auto bg-stone-50 relative">
+                                <img 
+                                    src={quickViewProduct.image_url || 'https://picsum.photos/600/600'} 
+                                    alt={quickViewProduct.name} 
+                                    className="w-full h-full object-cover absolute inset-0"
+                                />
+                            </div>
+
+                            <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto">
+                                <span className="text-[10px] uppercase font-black tracking-widest text-forest bg-forest/10 px-3 py-1 rounded-lg mb-4 inline-block">
+                                    {quickViewProduct.category}
+                                </span>
+                                <h2 className="text-3xl font-extrabold text-charcoal mb-2">{quickViewProduct.name}</h2>
+                                
+                                {quickViewProduct.average_rating > 0 && (
+                                    <div className="flex items-center gap-1 mb-6">
+                                        <div className="flex">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} size={14} className={i < Math.round(quickViewProduct.average_rating) ? 'text-amber-400 fill-amber-400' : 'text-stone-200'} />
+                                            ))}
+                                        </div>
+                                        <span className="text-xs font-bold text-muted ml-2">{quickViewProduct.average_rating}</span>
+                                    </div>
+                                )}
+
+                                <div className="flex items-baseline gap-2 mb-6">
+                                    <span className="text-4xl font-black text-forest">{parseInt(quickViewProduct.price).toLocaleString()}</span>
+                                    <span className="text-sm font-bold text-muted">RWF</span>
+                                </div>
+
+                                <p className="text-slate text-sm leading-relaxed mb-8">
+                                    {quickViewProduct.description || t('product_description_placeholder', { name: quickViewProduct.name })}
+                                </p>
+
+                                <div className="space-y-4">
+                                    <button 
+                                        onClick={(e) => {
+                                            handleAddToCart(quickViewProduct, e);
+                                            setQuickViewProduct(null);
+                                        }}
+                                        disabled={quickViewProduct.stock_quantity === 0}
+                                        className="w-full bg-forest text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:bg-forest-dark transition-all disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-forest/20"
+                                    >
+                                        <ShoppingBag size={20} /> {quickViewProduct.stock_quantity > 0 ? t('add_to_cart') : t('out_of_stock')}
+                                    </button>
+                                    <Link 
+                                        to={`/product/${quickViewProduct.id}`}
+                                        className="w-full border-2 border-stone-100 text-charcoal py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:border-stone-200 transition-all text-sm block text-center"
+                                    >
+                                        View Full Details <ChevronRight size={16} />
+                                    </Link>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
 
 // ════════════ SUB-COMPONENTS ════════════
 
-const ProductItem = ({ product, mode, onAdd, t }) => {
+const ProductItem = ({ product, mode, onAdd, onQuickView, t }) => {
     if (mode === 'list') {
         return (
             <motion.div 
@@ -533,11 +617,17 @@ const ProductItem = ({ product, mode, onAdd, t }) => {
 
                     <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     
-                    <div className="absolute bottom-6 left-6 right-6 flex gap-3 translate-y-12 group-hover:translate-y-0 transition-transform duration-500">
-                        <button className="flex-1 bg-white/90 backdrop-blur-md py-3 rounded-2xl text-charcoal font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-forest hover:text-white transition-all">
+                    <div className="absolute bottom-6 left-6 right-6 flex gap-3 translate-y-12 group-hover:translate-y-0 transition-transform duration-500 z-10">
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView(); }}
+                            className="flex-1 bg-white/90 backdrop-blur-md py-3 rounded-2xl text-charcoal font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-forest hover:text-white transition-all shadow-lg"
+                        >
                             <Eye size={16} /> {t('quick_view')}
                         </button>
-                        <button className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-charcoal hover:text-red-500 transition-colors">
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); /* Add to wishlist logic if any */ }}
+                            className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-charcoal hover:text-red-500 transition-colors shadow-lg"
+                        >
                             <Heart size={18} />
                         </button>
                     </div>

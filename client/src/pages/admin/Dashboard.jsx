@@ -15,6 +15,7 @@ const item = {
 const Dashboard = () => {
     const [stats, setStats] = useState({ products: 0, orders: 0, revenue: 0, paidOrders: 0, weeklyData: [] });
     const [recentOrders, setRecentOrders] = useState([]);
+    const [lowStock, setLowStock] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -59,6 +60,7 @@ const Dashboard = () => {
                     weeklyData,
                 });
                 setRecentOrders(ords.slice(0, 5));
+                setLowStock(prods.filter(p => p.stock_quantity <= 5).sort((a,b) => a.stock_quantity - b.stock_quantity).slice(0, 5));
             } catch (err) {
                 console.error('Failed to load dashboard');
             }
@@ -262,6 +264,49 @@ const Dashboard = () => {
                     </div>
                 )}
             </motion.div>
+
+            {/* ═══ LOW STOCK ALERTS ═══ */}
+            {lowStock.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-terra/5 rounded-2xl border border-terra/20 shadow-sm overflow-hidden mt-10"
+                >
+                    <div className="px-6 py-5 border-b border-terra/10 flex justify-between items-center bg-terra/10">
+                        <div>
+                            <h3 className="font-bold text-tera flex items-center gap-2"><Package size={18} className="text-terra" /> Low Stock Alerts</h3>
+                            <p className="text-xs text-terra/70 font-semibold mt-0.5">Products that need restock immediately</p>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr>
+                                    <th className="text-left px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-terra/70">Product Name</th>
+                                    <th className="text-left px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-terra/70">Category</th>
+                                    <th className="text-left px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-terra/70">Remaining</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {lowStock.map((prod) => (
+                                    <tr key={prod.id} className="border-t border-terra/10 bg-white/50">
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-semibold text-charcoal">{prod.name}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-[10px] font-black uppercase text-terra bg-terra/10 px-2 py-1 rounded-md">{prod.category}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-extrabold text-terra">{prod.stock_quantity} in stock</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </motion.div>
+            )}
         </div>
     );
 };

@@ -17,6 +17,7 @@ const ProductDetails = () => {
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
     const [isWishlisted, setIsWishlisted] = useState(false);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     const { user } = useContext(AuthContext);
     const { addToCart } = useContext(CartContext);
@@ -29,8 +30,16 @@ const ProductDetails = () => {
                     API.get(`/products/${id}`),
                     API.get(`/reviews/product/${id}`)
                 ]);
-                setProduct(prodRes.data);
+                const fetchedProduct = prodRes.data;
+                setProduct(fetchedProduct);
                 setReviews(revRes.data);
+
+                try {
+                    const relatedRes = await API.get(`/products?category=${fetchedProduct.category}&limit=5`);
+                    setRelatedProducts(relatedRes.data.products.filter(p => p.id.toString() !== id.toString()).slice(0, 4));
+                } catch (err) {
+                    console.error("Failed to load related products", err);
+                }
             } catch (err) {
                 toast.error('Failed to load product');
             }
@@ -219,6 +228,41 @@ const ProductDetails = () => {
                         </div>
                     </motion.div>
                 </div>
+
+                {/* Related Products Section */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-24">
+                        <div className="text-center mb-12">
+                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-forest">Discover More</span>
+                            <h2 className="text-3xl font-extrabold text-charcoal mt-2">Related Products</h2>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                            {relatedProducts.map(relProduct => (
+                                <Link to={`/product/${relProduct.id}`} key={relProduct.id} className="group bg-white rounded-3xl p-4 border border-stone-100 hover:shadow-xl transition-all duration-300">
+                                    <div className="aspect-square bg-stone-50 rounded-2xl overflow-hidden mb-4 relative">
+                                        <img 
+                                            src={relProduct.image_url || 'https://picsum.photos/400/400'} 
+                                            alt={relProduct.name} 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                        />
+                                    </div>
+                                    <div className="px-2 pb-2">
+                                        <h3 className="font-bold text-charcoal text-base truncate group-hover:text-forest transition-colors">{relProduct.name}</h3>
+                                        <div className="flex justify-between items-center mt-2">
+                                            <span className="text-lg font-black text-forest">{parseInt(relProduct.price).toLocaleString()} <span className="text-[10px] text-muted">RWF</span></span>
+                                            {relProduct.average_rating > 0 && (
+                                                <div className="flex items-center text-amber-500 text-xs font-bold">
+                                                    <Star size={12} className="fill-current mr-1" />
+                                                    {relProduct.average_rating}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <div className="mt-24 max-w-3xl mx-auto">
                     <div className="text-center mb-12">

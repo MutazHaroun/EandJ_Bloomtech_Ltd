@@ -17,8 +17,24 @@ const item = {
 
 const Cart = () => {
     const { t } = useTranslation(); // تفعيل الترجمة
-    const { cart, removeFromCart, updateQuantity, cartTotal, cartCount, clearCart } = useContext(CartContext);
+    const { cart, removeFromCart, updateQuantity, cartSubtotal, cartTotal, cartCount, clearCart, discount, applyDiscount } = useContext(CartContext);
     const navigate = useNavigate();
+    
+    // Promo State
+    const [promoInput, setPromoInput] = useState('');
+    const [promoError, setPromoError] = useState('');
+
+    const handleApplyPromo = () => {
+        if (promoInput.toUpperCase() === 'BLOOM10') {
+            applyDiscount(0.10); // 10%
+            setPromoError('');
+            toast.success(t('promo_applied') || 'Promo code BLOOM10 applied! (10% off)');
+        } else {
+            applyDiscount(0);
+            setPromoError(t('promo_invalid') || 'Invalid promo code');
+            toast.error(t('promo_invalid') || 'Invalid promo code');
+        }
+    };
 
     if (cart.length === 0) {
         return (
@@ -140,11 +156,39 @@ const Cart = () => {
                     >
                         <h3 className="font-bold text-charcoal text-lg mb-6 pb-4 border-b border-stone-100">{t('order_summary_title')}</h3>
 
+                        {/* Promo Code Section */}
+                        <div className="mb-6 pb-6 border-b border-stone-100">
+                            <label className="text-xs font-bold uppercase text-muted mb-2 block">Promo Code</label>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    value={promoInput}
+                                    onChange={(e) => setPromoInput(e.target.value)}
+                                    placeholder="e.g. BLOOM10"
+                                    className="flex-1 border border-stone-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-forest"
+                                />
+                                <button 
+                                    onClick={handleApplyPromo}
+                                    className="bg-charcoal text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-forest transition-colors"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                            {promoError && <p className="text-xs text-terra font-semibold mt-2">{promoError}</p>}
+                            {discount > 0 && <p className="text-xs text-forest font-semibold mt-2">10% discount applied!</p>}
+                        </div>
+
                         <div className="space-y-3 mb-6">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted">{t('subtotal_count_label', { count: cartCount })}</span>
-                                <span className="font-semibold text-charcoal">{cartTotal.toLocaleString()} RWF</span>
+                                <span className="font-semibold text-charcoal">{cartSubtotal.toLocaleString()} RWF</span>
                             </div>
+                            {discount > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted">Discount (10%)</span>
+                                    <span className="font-semibold text-terra">-{ (cartSubtotal * discount).toLocaleString() } RWF</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted">{t('delivery_kigali_label')}</span>
                                 <span className="font-semibold text-forest">{t('free_label')}</span>
