@@ -56,7 +56,7 @@ const Checkout = () => {
 
             const paymentRes = await API.post(
                 '/payments/pay',
-                { order_id, phone_number: user?.phone_number || guestPhone }
+                { order_id, phone_number: user?.phone_number || user?.phone || guestPhone }
             );
 
            // تعديل التحقق ليتوافق مع رد السيرفر الحقيقي (pending) أو المحاكي (paid)
@@ -172,6 +172,12 @@ const Checkout = () => {
                                     <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">{t('delivering_to_label')}</p>
                                     <p className="font-semibold text-charcoal">{user.name}</p>
                                     <p className="text-sm text-muted mt-0.5">{user.email}</p>
+                                    {(!user.phone && !user.phone_number) && (
+                                        <div className="mt-4">
+                                            <label className="text-xs font-bold text-muted uppercase">Phone Number (MoMo)</label>
+                                            <input type="tel" required value={guestPhone} onChange={e => setGuestPhone(e.target.value)} className="w-full mt-1 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest" placeholder="e.g. 0780000000" />
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="mt-6 bg-stone-50 border border-stone-100 rounded-2xl p-5 space-y-4">
@@ -191,6 +197,10 @@ const Checkout = () => {
                                 onClick={() => {
                                     if(!user && (!guestEmail || !guestPhone)) {
                                         toast.error("Please fill in your guest information");
+                                        return;
+                                    }
+                                    if(user && (!user.phone && !user.phone_number && !guestPhone)) {
+                                        toast.error("Please provide a phone number for MoMo payment");
                                         return;
                                     }
                                     setStep(2);
