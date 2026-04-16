@@ -11,6 +11,8 @@ const orderRoutes = require('./routes/orderRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const promoRoutes = require('./routes/promo');
+const cartRoutes = require('./routes/cartRoutes');
 
 // ════════════ MIDDLEWARES ════════════
 app.use(cors());
@@ -32,6 +34,8 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/promo', promoRoutes);
+app.use('/api/cart', cartRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'E&J Bloomtech Backend Running' });

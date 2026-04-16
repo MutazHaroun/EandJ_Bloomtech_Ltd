@@ -1,17 +1,55 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useContext, useRef } from 'react';
+import { AuthContext } from './AuthContext';
+import API from '../api';
 
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-    const [cart, setCart] = useState(() => {
-        const saved = localStorage.getItem('cart');
-        return saved ? JSON.parse(saved) : [];
-    });
-    const [discount, setDiscount] = useState(0);
+    const { user } = useContext(AuthContext);
+    const [cart, setCart] = useState([]);
+    const [discount, setDiscount] = useState(0); 
 
+    // Used to avoid excessive API calls
+    const initializedRef = useRef(false);
+
+    // Initial load from local storage
+    useEffect(() => {
+        const saved = localStorage.getItem('cart');
+        if (saved) {
+            try { setCart(JSON.parse(saved)); } 
+            catch(err) { console.error("Error parsing cart data"); }
+        }
+    }, []);
+
+    // Load from cloud when user logs in
+    useEffect(() => {
+        if (user) {
+            API.get('/cart').then(res => {
+                if(res.data.cart && res.data.cart.length > 0) {
+                    setCart(res.data.cart);
+                }
+                initializedRef.current = true;
+            }).catch(err => {
+                console.error("Cart sync error", err);
+                initializedRef.current = true;
+            });
+        } else {
+            initializedRef.current = true;
+        }
+    }, [user]);
+
+    // Save to local storage or cloud
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(cart));
-    }, [cart]);
+        
+        // Sync to cloud if logged in
+        if (user && initializedRef.current) {
+            const timeoutId = setTimeout(() => {
+                API.post('/cart/sync', { cart }).catch(console.error);
+            }, 1000); // 1-second debounce
+            return () => clearTimeout(timeoutId);
+        }
+    }, [cart, user]);
 
     const applyDiscount = (percent) => {
         setDiscount(percent);

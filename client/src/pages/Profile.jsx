@@ -4,25 +4,24 @@ import API from '../api';
 import { 
     User, Phone, MapPin, Package, Clock, CheckCircle, 
     Truck, XCircle, CreditCard, Edit2, Save, X, 
-    ShoppingBag, Heart, ReceiptText, Download 
+    ShoppingBag, Heart, ReceiptText, Download, Gift 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next'; // إضافة الاستيراد
+import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
-    const { t } = useTranslation(); // تفعيل الترجمة
+    const { t } = useTranslation();
     const { user, login } = useContext(AuthContext);
     const [profile, setProfile] = useState({});
     const [orders, setOrders] = useState([]);
     const [wishlist, setWishlist] = useState([]); 
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null); // للتحكم في نافذة الإيصال
+    const [selectedOrder, setSelectedOrder] = useState(null);
     
-    const BASE_URL = 'https://eandj-bloomtech-ltd.onrender.com'; 
-    
+    const points = user?.loyalty_points || 0;
     const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
     const [saving, setSaving] = useState(false);
 
@@ -108,14 +107,29 @@ const Profile = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="mb-8">
-                <h1 className="text-3xl font-extrabold text-charcoal tracking-tight">{t('profile_title')}</h1>
-                <p className="text-slate mt-2 font-medium">{t('profile_subtitle')}</p>
+            <div className="bg-sage/10 rounded-[3rem] p-8 md:p-14 mb-10 border border-stone-100 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="flex items-center gap-8">
+                    <div className="w-24 h-24 md:w-32 md:h-32 bg-forest rounded-[2rem] flex items-center justify-center text-white text-5xl font-black shadow-xl shrink-0">
+                        {user.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h1 className="text-4xl md:text-5xl font-black text-charcoal tracking-tight mb-2">{t('welcome_message', { name: user.name })}</h1>
+                        <p className="text-slate font-medium flex items-center gap-2"><MapPin size={16}/> {formData.address || t('address_not_provided')}</p>
+                    </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-100 flex items-center gap-4 min-w-[250px]">
+                    <div className="w-14 h-14 bg-[#ffcc00]/20 text-[#e6b800] rounded-2xl flex items-center justify-center">
+                        <Gift size={28} />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-slate uppercase tracking-widest mb-1">Bloom Rewards</p>
+                        <p className="text-3xl font-black text-charcoal">{points} <span className="text-sm">Pts</span></p>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* ═══ Profile Details ═══ */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-white rounded-3xl p-8 shadow-sm border border-stone-200">
                         <div className="flex justify-between items-start mb-6">
@@ -125,16 +139,6 @@ const Profile = () => {
                             ) : (
                                 <button onClick={() => { setIsEditing(false); setFormData({ name: profile.name, phone: profile.phone || '', address: profile.address || '' }); }} className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-full transition-colors"><X size={16} /></button>
                             )}
-                        </div>
-
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-16 h-16 bg-forest flex items-center justify-center rounded-2xl shadow-md text-white text-2xl font-bold">
-                                {profile.name?.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-charcoal">{profile.name}</h3>
-                                <p className="text-sm text-slate">{profile.email}</p>
-                            </div>
                         </div>
 
                         <AnimatePresence mode="wait">

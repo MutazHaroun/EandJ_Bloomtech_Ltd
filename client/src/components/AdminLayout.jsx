@@ -2,7 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
-import { LayoutDashboard, Package, ShoppingCart, LogOut, Leaf, ArrowLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, LogOut, Leaf, ArrowLeft, ChevronRight, Gift } from 'lucide-react';
 
 const AdminLayout = () => {
     const location = useLocation();
@@ -13,6 +13,7 @@ const AdminLayout = () => {
         { path: '/admin', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
         { path: '/admin/products', name: 'Products', icon: <Package size={20} /> },
         { path: '/admin/orders', name: 'Orders', icon: <ShoppingCart size={20} /> },
+        { path: '/admin/promos', name: 'Promos', icon: <Gift size={20} /> },
     ];
 
     const isActive = (path) => location.pathname === path;

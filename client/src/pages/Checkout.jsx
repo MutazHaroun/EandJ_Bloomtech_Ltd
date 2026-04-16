@@ -14,9 +14,13 @@ const Checkout = () => {
     const { user } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const [step, setStep] = useState(1); // 1=Review, 2=Payment, 3=Success
+    const [step, setStep] = useState(1); // 1=Review/Guest, 2=Payment, 3=Success
     const [loading, setLoading] = useState(false);
     const [trackingNumber, setTrackingNumber] = useState('');
+    
+    // Guest info state
+    const [guestEmail, setGuestEmail] = useState('');
+    const [guestPhone, setGuestPhone] = useState('');
 
     // إصلاح الخطأ: استخدام useEffect للتحقق من حالة السلة وتجنب الدوران اللانهائي
     useEffect(() => {
@@ -35,11 +39,16 @@ const Checkout = () => {
         setLoading(true);
 
         try {
+            const orderPayload = { 
+                items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })) 
+            };
+            if (!user) {
+                orderPayload.guest_email = guestEmail;
+                orderPayload.guest_phone = guestPhone;
+            }
+
             // 1. Create Order
-            const orderRes = await API.post(
-                '/orders',
-                { items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity })) }
-            );
+            const orderRes = await API.post('/orders', orderPayload);
             const order_id = orderRes.data.order.id;
 
             // 2. Process MTN MoMo Payment
@@ -47,7 +56,7 @@ const Checkout = () => {
 
             const paymentRes = await API.post(
                 '/payments/pay',
-                { order_id, phone_number: user?.phone_number } // تم التعديل لجلب الرقم تلقائياً من بيانات المستخدم
+                { order_id, phone_number: user?.phone_number || guestPhone }
             );
 
            // تعديل التحقق ليتوافق مع رد السيرفر الحقيقي (pending) أو المحاكي (paid)
@@ -158,16 +167,34 @@ const Checkout = () => {
                             </div>
 
                             {/* Delivery info */}
-                            {user && (
+                            {user ? (
                                 <div className="mt-6 bg-sage/30 rounded-2xl p-5">
                                     <p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">{t('delivering_to_label')}</p>
                                     <p className="font-semibold text-charcoal">{user.name}</p>
                                     <p className="text-sm text-muted mt-0.5">{user.email}</p>
                                 </div>
+                            ) : (
+                                <div className="mt-6 bg-stone-50 border border-stone-100 rounded-2xl p-5 space-y-4">
+                                    <h3 className="font-bold text-charcoal text-sm mb-2">Guest Information</h3>
+                                    <div>
+                                        <label className="text-xs font-bold text-muted uppercase">Email Address</label>
+                                        <input type="email" required value={guestEmail} onChange={e => setGuestEmail(e.target.value)} className="w-full mt-1 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest" placeholder="e.g. hello@example.com" />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-muted uppercase">Phone Number (MoMo)</label>
+                                        <input type="tel" required value={guestPhone} onChange={e => setGuestPhone(e.target.value)} className="w-full mt-1 border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-forest" placeholder="e.g. 0780000000" />
+                                    </div>
+                                </div>
                             )}
 
                             <button
-                                onClick={() => setStep(2)}
+                                onClick={() => {
+                                    if(!user && (!guestEmail || !guestPhone)) {
+                                        toast.error("Please fill in your guest information");
+                                        return;
+                                    }
+                                    setStep(2);
+                                }}
                                 className="w-full mt-8 bg-forest hover:bg-forest-dark text-white py-4 rounded-2xl font-bold text-base shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
                             >
                                 {t('continue_to_payment_btn')}
@@ -219,7 +246,7 @@ const Checkout = () => {
                                             <span className="text-muted opacity-50">+250</span>
                                             <span>
                                                 {(() => {
-                                                    let num = user?.phone_number || user?.phone || "YOUR NUMBER";
+                                                    let num = user?.phone_number || user?.phone || guestPhone || "YOUR NUMBER";
                                                     if (num !== "YOUR NUMBER") {
                                                         num = num.replace(/\D/g, '');
                                                         if (num.startsWith('250')) num = num.substring(3);

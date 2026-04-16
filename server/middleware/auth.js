@@ -14,6 +14,25 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+const optionalAuthToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+        req.user = null;
+        return next();
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (!err) {
+            req.user = user;
+        } else {
+            req.user = null;
+        }
+        next();
+    });
+};
+
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
         next();
@@ -22,4 +41,4 @@ const isAdmin = (req, res, next) => {
     }
 };
 
-module.exports = { authenticateToken, isAdmin };
+module.exports = { authenticateToken, isAdmin, optionalAuthToken };

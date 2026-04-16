@@ -1,27 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { CartContext } from '../context/CartContext';
+import { Link, useParams } from 'react-router-dom';
 import API from '../api';
-import { Heart, HeartOff, Trash2, ShoppingBag } from 'lucide-react';
+import { Heart, HeartOff, Trash2, ShoppingBag, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
-import { Link } from 'react-router-dom';
 
-const Wishlist = () => {
+const Wishlist = ({ shared = false }) => {
     const { t } = useTranslation();
+    const { user } = useContext(AuthContext);
+    const { userId } = useParams();
     const [wishlist, setWishlist] = useState([]);
+    const [sharedUserName, setSharedUserName] = useState('');
     const [loading, setLoading] = useState(true);
-    console.log("Wishlist V2 loaded - Bypassing cache...");
     
-    const BASE_URL = 'https://eandj-bloomtech-ltd.onrender.com';
-
     useEffect(() => {
         fetchWishlist();
-    }, []);
+    }, [shared, userId]);
 
     const fetchWishlist = async () => {
         try {
-            const res = await API.get('/wishlist');
-            setWishlist(res.data || []);
+            let res;
+            if (shared) {
+                res = await API.get(`/wishlist/shared/${userId}`);
+                setSharedUserName(res.data.user_name || 'User');
+                setWishlist(res.data.items || []);
+            } else {
+                res = await API.get('/wishlist');
+                setWishlist(res.data || []);
+            }
         } catch (err) {
             console.error(err);
             toast.error(t('wishlist_load_error') || 'Error loading wishlist');
@@ -37,8 +46,14 @@ const Wishlist = () => {
             toast.success(t('wishlist_remove_success') || 'Removed from wishlist');
         } catch (err) {
             console.error(err);
-            toast.error(t('wishlist_remove_error') || 'Error removing from wishlist');
+            toast.error(t('wishlist_remove_failed') || 'Error removing from wishlist');
         }
+    };
+
+    const handleShare = () => {
+        const link = `${window.location.origin}/shared-wishlist/${user.id}`;
+        navigator.clipboard.writeText(link);
+        toast.success("Wishlist link copied to clipboard!");
     };
 
     if (loading) {
@@ -56,14 +71,25 @@ const Wishlist = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex items-center gap-3 mb-8 border-b border-stone-100 pb-6">
-                <div className="w-12 h-12 bg-red-50 text-terra rounded-full flex items-center justify-center">
-                    <Heart size={24} fill="currentColor" />
-                </div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
                 <div>
-                    <h1 className="text-3xl font-extrabold text-charcoal tracking-tight">My Wishlist</h1>
-                    <p className="text-slate font-medium">{wishlist.length} items saved</p>
+                    <h1 className="text-4xl md:text-5xl font-black text-charcoal tracking-tight mb-3">
+                        {shared ? `${sharedUserName}'s Wishlist` : t('wishlist_title') || 'My Wishlist'}
+                    </h1>
+                    <p className="text-slate font-medium flex items-center gap-2">
+                        <Heart size={18} className="text-terra" />
+                        {wishlist.length} {wishlist.length === 1 ? t('item_label') || 'item' : t('items_label') || 'items'} {t('saved_label') || 'saved'}
+                    </p>
                 </div>
+                {!shared && wishlist.length > 0 && (
+                    <button 
+                        onClick={handleShare}
+                        className="flex items-center gap-2 px-6 py-3 bg-stone-100 hover:bg-stone-200 text-charcoal font-bold rounded-2xl transition-all shadow-sm"
+                    >
+                        <Share2 size={18} />
+                        Share Link
+                    </button>
+                )}
             </div>
 
             {wishlist.length === 0 ? (
@@ -71,9 +97,11 @@ const Wishlist = () => {
                     <HeartOff size={48} className="mx-auto text-stone-300 mb-4" />
                     <h3 className="text-xl font-bold text-charcoal mb-2">Your wishlist is empty</h3>
                     <p className="text-slate mb-6">Explore our shop and save your favorite items here.</p>
-                    <Link to="/shop" className="bg-forest text-white px-8 py-3 rounded-2xl font-bold inline-flex items-center gap-2 hover:bg-forest-dark transition-colors">
-                        <ShoppingBag size={18} /> Go Shopping
-                    </Link>
+                    {!shared && (
+                        <Link to="/shop" className="bg-forest text-white px-8 py-3 rounded-2xl font-bold inline-flex items-center gap-2 hover:bg-forest-dark transition-colors">
+                            <ShoppingBag size={18} /> Go Shopping
+                        </Link>
+                    )}
                 </div>
             ) : (
                 <motion.div 
@@ -83,7 +111,7 @@ const Wishlist = () => {
                         hidden: {},
                         show: { transition: { staggerChildren: 0.1 } }
                     }}
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 shrink-0"
+                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
                 >
                     <AnimatePresence>
                         {wishlist.map(item => (
@@ -95,13 +123,15 @@ const Wishlist = () => {
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     className="bg-white border border-stone-100 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group relative flex flex-col"
                                 >
-                                    <button 
-                                        onClick={() => removeFromWishlist(item.product_id || item.id)}
-                                        className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-stone-400 hover:text-terra hover:bg-white transition-all shadow-sm"
-                                        title="Remove from Wishlist"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    {!shared && (
+                                        <button 
+                                            onClick={() => removeFromWishlist(item.product_id || item.id)}
+                                            className="absolute top-3 right-3 z-10 w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-stone-400 hover:text-terra hover:bg-white transition-all shadow-sm"
+                                            title="Remove from Wishlist"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
 
                                     <Link to={`/product/${item.product_id || item.id}`} className="block flex-1 flex flex-col h-full">
                                         <div className="h-48 relative bg-stone-100 overflow-hidden w-full">

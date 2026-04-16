@@ -1,11 +1,11 @@
 const { pool } = require('../db');
 
-// 1. إنشاء طلب جديد (Checkout)
+// 1. إنشاء طلب جديد (Checkout & Guest)
 const createOrder = async (req, res) => {
     const client = await pool.connect();
     try {
-        const { id: user_id } = req.user;
-        const { items } = req.body; 
+        const user_id = req.user ? req.user.id : null;
+        const { items, guest_email, guest_phone } = req.body; 
 
         if (!items || items.length === 0) {
             return res.status(400).json({ error: 'Order must contain items' });
@@ -44,8 +44,8 @@ const createOrder = async (req, res) => {
 
         // إدخال الطلب مع رقم التتبع الجديد
         const orderRes = await client.query(
-            'INSERT INTO orders (user_id, total_amount, status, tracking_number) VALUES ($1, $2, $3, $4) RETURNING *',
-            [user_id, total_amount, 'pending', tracking_number]
+            'INSERT INTO orders (user_id, total_amount, status, tracking_number, guest_email, guest_phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [user_id, total_amount, 'pending', tracking_number, user_id ? null : guest_email, user_id ? null : guest_phone]
         );
         const order = orderRes.rows[0];
 
@@ -150,7 +150,7 @@ const getAllOrders = async (req, res) => {
         const ordersRes = await pool.query(`
             SELECT o.*, u.name as user_name, u.email as user_email 
             FROM orders o 
-            JOIN users u ON o.user_id = u.id 
+            LEFT JOIN users u ON o.user_id = u.id 
             ORDER BY o.created_at DESC`);
         res.json(ordersRes.rows);
     } catch (err) {

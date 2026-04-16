@@ -1,8 +1,10 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next'; // إضافة الاستيراد
 import { CartContext } from '../context/CartContext';
+import API from '../api';
+import { toast } from 'react-hot-toast';
 // تصحيح الخطأ هنا من lucide-center إلى lucide-react
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ChevronLeft, Leaf } from 'lucide-react';
 
@@ -24,15 +26,17 @@ const Cart = () => {
     const [promoInput, setPromoInput] = useState('');
     const [promoError, setPromoError] = useState('');
 
-    const handleApplyPromo = () => {
-        if (promoInput.toUpperCase() === 'BLOOM10') {
-            applyDiscount(0.10); // 10%
+    const handleApplyPromo = async () => {
+        if (!promoInput) return;
+        try {
+            const res = await API.post('/promo/validate', { code: promoInput });
+            applyDiscount(Number(res.data.discount_percentage)); 
             setPromoError('');
-            toast.success(t('promo_applied') || 'Promo code BLOOM10 applied! (10% off)');
-        } else {
+            toast.success(t('promo_applied') || `Promo code ${res.data.code} applied!`);
+        } catch (err) {
             applyDiscount(0);
-            setPromoError(t('promo_invalid') || 'Invalid promo code');
-            toast.error(t('promo_invalid') || 'Invalid promo code');
+            setPromoError(err.response?.data?.error || t('promo_invalid') || 'Invalid promo code');
+            toast.error(err.response?.data?.error || t('promo_invalid') || 'Invalid promo code');
         }
     };
 

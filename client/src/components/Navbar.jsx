@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { CartContext } from '../context/CartContext';
+import API from '../api';
 import { useTranslation } from 'react-i18next'; // 1. استيراد Hook الترجمة
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion';
 import { 
@@ -22,6 +23,11 @@ const Navbar = ({ onCartOpen }) => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     
+    // Smart Search State
+    const [searchKey, setSearchKey] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    
     const { scrollY } = useScroll();
     const userMenuRef = useRef(null);
 
@@ -39,7 +45,29 @@ const Navbar = ({ onCartOpen }) => {
         setIsMobileOpen(false);
         setIsSearchOpen(false);
         setIsUserMenuOpen(false);
+        setSearchKey('');
+        setSearchResults([]);
     }, [location.pathname]);
+
+    useEffect(() => {
+        if (!searchKey.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        const delayDebounceFn = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const res = await API.get(`/products?search=${searchKey}&limit=5`);
+                setSearchResults(res.data.products);
+            } catch (err) {
+                console.error("Search error", err);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 400);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchKey]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {
@@ -218,8 +246,49 @@ const Navbar = ({ onCartOpen }) => {
                             <h2 className="text-5xl md:text-7xl font-black text-charcoal mb-12 tracking-tighter text-center">{t('search_title')}</h2>
                             <div className="relative">
                                 <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-forest" size={32} />
-                                <input autoFocus type="text" placeholder={t('search_placeholder')} className="w-full bg-stone-50 border-b-8 border-stone-100 p-10 pl-24 text-3xl font-bold focus:outline-none focus:border-forest rounded-t-[40px]" />
+                                <input 
+                                    autoFocus 
+                                    type="text" 
+                                    value={searchKey}
+                                    onChange={(e) => setSearchKey(e.target.value)}
+                                    placeholder={t('search_placeholder')} 
+                                    className={`w-full bg-stone-50 border-b-8 border-stone-100 p-10 pl-24 text-3xl font-bold focus:outline-none focus:border-forest ${searchResults.length > 0 || searchLoading ? 'rounded-t-[40px]' : 'rounded-[40px]'}`}
+                                />
                             </div>
+                            
+                            {/* Autocomplete Results */}
+                            <AnimatePresence>
+                                {(searchResults.length > 0 || searchLoading) && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: -10 }} 
+                                        animate={{ opacity: 1, y: 0 }} 
+                                        exit={{ opacity: 0, y: -10 }}
+                                        className="bg-white rounded-b-[40px] shadow-2xl overflow-hidden mt-[-10px] relative z-20 border-t border-stone-100"
+                                    >
+                                        <div className="p-4 max-h-96 overflow-y-auto">
+                                            {searchLoading ? (
+                                                <div className="p-8 text-center text-muted font-bold animate-pulse">Loading...</div>
+                                            ) : (
+                                                searchResults.map(product => (
+                                                    <Link 
+                                                        key={product.id} 
+                                                        to={`/product/${product.id}`}
+                                                        className="flex items-center gap-6 p-4 hover:bg-stone-50 rounded-2xl transition-colors"
+                                                    >
+                                                        <div className="w-16 h-16 bg-stone-100 rounded-xl overflow-hidden">
+                                                            {product.image_url && <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />}
+                                                        </div>
+                                                        <div>
+                                                            <h4 className="text-xl font-bold text-charcoal">{product.name}</h4>
+                                                            <p className="text-forest font-bold">{product.price} RWF</p>
+                                                        </div>
+                                                    </Link>
+                                                ))
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </motion.div>
                 )}

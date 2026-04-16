@@ -7,10 +7,10 @@ const {
     updateOrderStatus, 
     getOrderByTracking // استيراد الدالة الجديدة
 } = require('../controllers/orderController');
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { authenticateToken, isAdmin, optionalAuthToken } = require('../middleware/auth');
 
-// 1. مسارات المستخدم (User Routes)
-router.post('/', authenticateToken, createOrder);
+// 1. مسارات المستخدم (User & Guest Routes)
+router.post('/', optionalAuthToken, createOrder);
 router.get('/me', authenticateToken, getMyOrders);
 
 // 2. مسار التتبع (Public Route)

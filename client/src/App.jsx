@@ -25,6 +25,7 @@ import Wishlist from './pages/Wishlist';
 import Dashboard from './pages/admin/Dashboard';
 import ManageProducts from './pages/admin/ManageProducts';
 import ManageOrders from './pages/admin/ManageOrders';
+import ManagePromos from './pages/admin/ManagePromos';
 
 // Page transition wrapper
 const PageTransition = ({ children }) => (
@@ -50,6 +51,7 @@ const AnimatedRoutes = ({ onCartOpen }) => {
           <Route index element={<Dashboard />} />
           <Route path="products" element={<ManageProducts />} />
           <Route path="orders" element={<ManageOrders />} />
+          <Route path="promos" element={<ManagePromos />} />
         </Route>
 
         {/* Public/User Routes */}
@@ -72,6 +74,7 @@ const AnimatedRoutes = ({ onCartOpen }) => {
                 <Route path="/checkout" element={<PrivateRoute><PageTransition><Checkout /></PageTransition></PrivateRoute>} />
                 <Route path="/profile" element={<PrivateRoute><PageTransition><Profile /></PageTransition></PrivateRoute>} />
                 <Route path="/wishlist" element={<PrivateRoute><PageTransition><Wishlist /></PageTransition></PrivateRoute>} />
+                <Route path="/shared-wishlist/:userId" element={<PageTransition><Wishlist shared={true} /></PageTransition>} />
               </Routes>
             </main>
 

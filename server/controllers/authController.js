@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool } = require('../db');
+const emailService = require('../services/emailService');
 require('dotenv').config();
 
 const register = async (req, res) => {
@@ -22,6 +23,9 @@ const register = async (req, res) => {
             'INSERT INTO users (name, email, password_hash, phone, address) VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, phone as phone_number',
             [name, email, password_hash, phone, address]
         );
+
+        // Send mock welcome email asynchronously
+        emailService.sendWelcomeEmail(email, name);
 
         res.status(201).json({ message: 'User registered successfully', user: newUser.rows[0] });
     } catch (error) {

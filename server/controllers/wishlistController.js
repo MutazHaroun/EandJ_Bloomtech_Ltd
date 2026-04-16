@@ -48,4 +48,27 @@ const removeWishlist = async (req, res) => {
     }
 };
 
-module.exports = { addWishlist, getWishlist, removeWishlist };
+// 4. Get a user's wishlist publicly
+const getPublicWishlist = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const result = await pool.query(`
+            SELECT w.id as wishlist_id, p.* 
+            FROM wishlists w 
+            JOIN products p ON w.product_id = p.id 
+            WHERE w.user_id = $1
+            ORDER BY w.created_at DESC
+        `, [userId]);
+        
+        let userName = "A user";
+        const userRes = await pool.query('SELECT name FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length > 0) userName = userRes.rows[0].name;
+
+        res.json({ user_name: userName, items: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error fetching public wishlist' });
+    }
+}
+
+module.exports = { addWishlist, getWishlist, removeWishlist, getPublicWishlist };

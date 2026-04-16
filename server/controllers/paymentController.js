@@ -1,6 +1,7 @@
 const { pool } = require('../db');
 const crypto = require('crypto');
 const axios = require('axios');
+const emailService = require('../services/emailService');
 
 /**
  * دالة مساعدة للحصول على Access Token من MTN
@@ -43,14 +44,33 @@ const processPayment = async (req, res) => {
     try {
         client = await pool.connect();
         const { order_id } = req.body;
-        const user_id = req.user.id;
+        const user_id = req.user ? req.user.id : null;
 
-        // جلب رقم الهاتف الخاص بالمستخدم من قاعدة البيانات بدلاً من الاعتماد على المدخلات فقط
-        const userRes = await client.query('SELECT phone FROM users WHERE id = $1', [user_id]);
-        if (userRes.rows.length === 0 || !userRes.rows[0].phone) {
-            return res.status(400).json({ error: 'User phone number not found. Please update your profile.' });
+        // جلب تفاصيل الطلب من قاعدة البيانات
+        const orderRes = await client.query(
+            'SELECT * FROM orders WHERE id = $1', 
+            [order_id]
+        );
+        
+        if (orderRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
         }
-        let phone_number = userRes.rows[0].phone;
+
+        const order = orderRes.rows[0];
+
+        // جلب رقم الهاتف
+        let phone_number = order.guest_phone;
+        
+        // إذا كان يملك حساب، خذ رقمه
+        if (user_id && !phone_number) {
+            const userRes = await client.query('SELECT phone FROM users WHERE id = $1', [user_id]);
+            if (userRes.rows.length > 0) phone_number = userRes.rows[0].phone;
+        }
+
+        if (!phone_number) {
+            return res.status(400).json({ error: 'Phone number not provided.' });
+        }
+        
         
         // تنظيف الرقم ليتوافق مع متطلبات MTN API (إزالة + وأي مسافات)
         phone_number = phone_number.replace(/\D/g, '');
@@ -60,18 +80,12 @@ const processPayment = async (req, res) => {
         } else if (!phone_number.startsWith('250') && phone_number.length === 9) {
             phone_number = '250' + phone_number;
         }
-
-        // جلب تفاصيل الطلب من قاعدة البيانات
-        const orderRes = await client.query(
-            'SELECT * FROM orders WHERE id = $1 AND user_id = $2', 
-            [order_id, user_id]
-        );
         
-        if (orderRes.rows.length === 0) {
+        if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
 
-        const order = orderRes.rows[0];
+
         if (order.status !== 'pending') {
             return res.status(400).json({ error: 'Order is already processed' });
         }
@@ -160,6 +174,37 @@ const handleMomoWebhook = async (req, res) => {
                 [financialTransactionId || 'SUCCESS', `${externalId}%`]
             );
             
+            // Add Loyalty Points (1 point for every 100 RWF)
+            const orderTotalRes = await client.query("SELECT total_amount, user_id FROM orders WHERE id::text LIKE $1", [`${externalId}%`]);
+            if(orderTotalRes.rows.length > 0 && orderTotalRes.rows[0].user_id) {
+                 const pointsEarned = Math.floor(orderTotalRes.rows[0].total_amount / 100); 
+                 await client.query("UPDATE users SET loyalty_points = COALESCE(loyalty_points, 0) + $1 WHERE id = $2", [pointsEarned, orderTotalRes.rows[0].user_id]);
+                 console.log(`🎁 Added ${pointsEarned} loyalty points to User ${orderTotalRes.rows[0].user_id}`);
+            }
+
+            // --- Send Order Confirmation Email ---
+            try {
+                const orderDataForEmailRes = await client.query(`
+                    SELECT o.total_amount, o.tracking_number, o.guest_email, u.email as user_email
+                    FROM orders o
+                    LEFT JOIN users u ON o.user_id = u.id
+                    WHERE o.id::text LIKE $1
+                `, [`${externalId}%`]);
+
+                if(orderDataForEmailRes.rows.length > 0) {
+                    const oData = orderDataForEmailRes.rows[0];
+                    const targetEmail = oData.user_email || oData.guest_email;
+                    if(targetEmail) {
+                        emailService.sendOrderConfirmation(targetEmail, {
+                            total_amount: oData.total_amount,
+                            tracking_number: oData.tracking_number
+                        });
+                    }
+                }
+            } catch(e) {
+                console.error("Error sending mock email", e);
+            }
+
             console.log("✅ Order updated to PAID via Webhook");
         } else {
             // في حال فشل الدفع أو إلغائه من الزبون

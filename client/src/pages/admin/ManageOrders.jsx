@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import API from '../../api';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 
 const ManageOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -49,6 +49,30 @@ const ManageOrders = () => {
         (o.user_email || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleExportCSV = () => {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Tracking,Customer,Email,Phone,Amount,Status,Date\n";
+        filtered.forEach(o => {
+            const row = [
+                o.tracking_number || '',
+                o.user_name || 'Guest',
+                o.user_email || o.guest_email || '',
+                o.guest_phone || '',
+                o.total_amount,
+                o.status,
+                new Date(o.created_at).toLocaleDateString()
+            ].map(String).join(",");
+            csvContent += row + "\r\n";
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Stats
     const pending = orders.filter(o => o.status === 'pending').length;
     const paid = orders.filter(o => o.status === 'paid').length;
@@ -69,9 +93,17 @@ const ManageOrders = () => {
     return (
         <div>
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-extrabold text-charcoal">Orders</h1>
-                <p className="text-muted font-medium mt-1">{orders.length} total orders</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-extrabold text-charcoal">Orders</h1>
+                    <p className="text-muted font-medium mt-1">{orders.length} total orders</p>
+                </div>
+                <button 
+                    onClick={handleExportCSV}
+                    className="flex items-center gap-2 px-6 py-3 bg-stone-100 hover:bg-stone-200 text-charcoal font-bold rounded-2xl transition-all shadow-sm"
+                >
+                    <Download size={18} /> Export CSV
+                </button>
             </div>
 
             {/* Quick Stats */}

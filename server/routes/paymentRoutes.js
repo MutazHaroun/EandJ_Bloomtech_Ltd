@@ -6,10 +6,10 @@ const {
     trackOrder, 
     handleMomoWebhook // إضافة الدالة الجديدة هنا
 } = require('../controllers/paymentController');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuthToken } = require('../middleware/auth');
 
-// 1. مسار تنفيذ عملية الدفع (محمي)
-router.post('/pay', authenticateToken, processPayment);
+// 1. مسار إرسال طلب الدفع (Request To Pay)
+router.post('/pay', optionalAuthToken, processPayment);
 
 // 2. مسار جلب حالة الدفع لطلب محدد (محمي)
 router.get('/order/:order_id', authenticateToken, getOrderPaymentStatus);
