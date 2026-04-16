@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next'; // إضافة الاستيراد
 import { CartContext } from '../context/CartContext';
 import API from '../api';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-toastify';
 // تصحيح الخطأ هنا من lucide-center إلى lucide-react
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ChevronLeft, Leaf } from 'lucide-react';
 
