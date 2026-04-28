@@ -145,8 +145,7 @@ await axios.post(`${process.env.MOMO_BASE_URL}/collection/v1_0/requesttopay`, {
         console.log('⚠️ Falling back to Mock Payment Simulation...');
         
         try {
-            // Mock Fallback
-            client = await pool.connect();
+            // Mock Fallback using the existing connection
             const { order_id } = req.body;
             const mockTransactionId = 'MOCK-' + crypto.randomUUID().split('-')[0];
             const tracking_number = 'TRK-BLOOM-' + crypto.randomBytes(3).toString('hex').toUpperCase() + Date.now().toString().slice(-4);
@@ -198,17 +197,16 @@ await axios.post(`${process.env.MOMO_BASE_URL}/collection/v1_0/requesttopay`, {
             
             await client.query('COMMIT');
             
-            res.json({
+            return res.json({
                 message: 'Payment mock processed successfully (MTN Sandbox offline).',
                 referenceId: mockTransactionId,
                 status: 'paid',
                 tracking_number: tracking_number
             });
         } catch (mockErr) {
+            console.error('❌ Mock fallback failed:', mockErr);
             if (client) await client.query('ROLLBACK');
-            res.status(500).json({ error: 'Mock payment failed' });
-        } finally {
-            if (client) client.release();
+            return res.status(500).json({ error: 'Mock payment failed' });
         }
     } finally {
         if (client) client.release(); 
