@@ -148,18 +148,18 @@ await axios.post(`${process.env.MOMO_BASE_URL}/collection/v1_0/requesttopay`, {
             // Mock Fallback using the existing connection
             const { order_id } = req.body;
             const mockTransactionId = 'MOCK-' + crypto.randomUUID().split('-')[0];
-            const tracking_number = 'TRK-BLOOM-' + crypto.randomBytes(3).toString('hex').toUpperCase() + Date.now().toString().slice(-4);
             
             await client.query('BEGIN');
             
-            // Update order to paid
+            // Update order to paid WITHOUT overwriting tracking_number
             await client.query(
-                "UPDATE orders SET status = 'paid', tracking_number = $1 WHERE id = $2",
-                [tracking_number, order_id]
+                "UPDATE orders SET status = 'paid' WHERE id = $1",
+                [order_id]
             );
 
-            // Add Loyalty Points (1 point for every 100 RWF)
-            const orderTotalRes = await client.query("SELECT total_amount, user_id FROM orders WHERE id = $1", [order_id]);
+            // Add Loyalty Points & Fetch existing tracking number
+            const orderTotalRes = await client.query("SELECT total_amount, user_id, tracking_number FROM orders WHERE id = $1", [order_id]);
+            const tracking_number = orderTotalRes.rows.length > 0 ? orderTotalRes.rows[0].tracking_number : 'UNKNOWN';
             if(orderTotalRes.rows.length > 0 && orderTotalRes.rows[0].user_id) {
                  const pointsEarned = Math.floor(orderTotalRes.rows[0].total_amount / 100); 
                  await client.query("UPDATE users SET loyalty_points = COALESCE(loyalty_points, 0) + $1 WHERE id = $2", [pointsEarned, orderTotalRes.rows[0].user_id]);
@@ -225,12 +225,11 @@ const handleMomoWebhook = async (req, res) => {
         await client.query('BEGIN');
 
         if (status === 'SUCCESSFUL') {
-            const tracking_number = 'TRK-BLOOM-' + crypto.randomBytes(3).toString('hex').toUpperCase() + Date.now().toString().slice(-4);
             
-            // تحديث الطلب ليصبح مدفوعاً وإضافة رقم التتبع
+            // تحديث الطلب ليصبح مدفوعاً بدون مسح رقم التتبع الأصلي
             await client.query(
-                "UPDATE orders SET status = 'paid', tracking_number = $1 WHERE id::text LIKE $2",
-                [tracking_number, `${externalId}%`]
+                "UPDATE orders SET status = 'paid' WHERE id::text LIKE $1",
+                [`${externalId}%`]
             );
 
             // تحديث سجل الدفعة بنجاح العملية
